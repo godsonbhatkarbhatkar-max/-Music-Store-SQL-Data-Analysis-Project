@@ -1,0 +1,209 @@
+--Easy
+--1. Who is the senior most employee based on job title?
+
+SELECT 
+    *
+FROM
+    employee
+ORDER BY LEvel DESC
+LIMIT 1;
+
+
+--2. Which countries have the most Invoices? 
+
+SELECT 
+    billing_country, COUNT(*) AS Total_invoices
+FROM
+    invoice
+GROUP BY billing_country
+ORDER BY TOtal_invoices DESC;
+
+
+--3. What are top 3 values of total invoice?
+
+SELECT 
+    Total
+FROM
+    invoice
+ORDER BY Total DESC
+LIMIT 3
+
+
+--4. Which city has the best customers? We would like to throw a promotional Music 
+--Festival in the city we made the most money. Write a query that returns one city that has the highest sum of invoice totals. Return both the city name & sum of all invoice 
+totals 
+
+SELECT 
+    billing_city, SUM(total) AS Total_sum
+FROM
+    invoice
+GROUP BY billing_city
+ORDER BY Total_sum DESC
+LIMIT 1
+
+
+--5. Who is the best customer? The customer who has spent the most money will be declared the best customer. Write a query that returns the person who has spent the 
+--most money
+
+SELECT 
+    customer.first_name,
+    customer.last_name,
+    customer.customer_id,
+    SUM(Total) AS Total_sum
+FROM
+    Customer
+        JOIN
+    invoice ON customer.customer_id = invoice.invoice_id
+GROUP BY customer.customer_id , customer.first_name , customer.last_name
+ORDER BY Total_sum DESC
+LIMIT 1
+
+
+--Moderate
+--1. Write query to return the email, first name, last name, & Genre of all Rock Music listeners. Return your list ordered alphabetically by email starting with A 
+
+SELECT DISTINCT
+    Customer.Email,
+    Customer.First_Name,
+    Customer.Last_Name,
+    Genre.Name AS Genre
+FROM
+    Customer
+        JOIN
+    Invoice ON Customer.Customer_Id = Invoice.Customer_Id
+        JOIN
+    Invoice_Line ON Invoice.Invoice_Id = Invoice_Line.Invoice_Id
+        JOIN
+    Track ON Invoice_Line.Track_Id = Track.Track_Id
+        JOIN
+    Genre ON Track.Genre_Id = Genre.Genre_Id
+WHERE
+    Genre.Name = 'Rock'
+ORDER BY Customer.Email ASC;
+
+
+
+
+--2. Let's invite the artists who have written the most rock music in our dataset. Write a 
+--query that returns the Artist name and total track count of the top 10 rock bands
+
+SELECT 
+    Artist.Name AS Artist_Name,
+    COUNT(Track.Track_Id) AS Total_Rock_Tracks
+FROM
+    Artist
+        JOIN
+    Album ON Artist.Artist_Id = Album.Artist_Id
+        JOIN
+    Track ON Album.ALbum_Id = Track.Album_Id
+        JOIN
+    Genre ON Track.Genre_Id = Genre.Genre_Id
+WHERE
+    Genre.Name = 'Rock'
+GROUP BY Artist.Name
+ORDER BY Total_Rock_Tracks DESC
+LIMIT 10;
+
+
+--3. Return all the track names that have a song length longer than the average song length. Return the Name and Milliseconds for each track. Order by the song length with the 
+--longest songs listed first 
+
+
+SELECT 
+    Track.name AS Track_name, milliseconds
+FROM
+    Track
+WHERE
+    milliseconds > (SELECT 
+            AVG(milliseconds)
+        FROM
+            Track)
+ORDER BY milliseconds DESC
+
+--Advance
+--1. Find how much amount spent by each customer on artists? Write a query to return customer name, artist name and total spent 
+
+SELECT 
+    Customer.first_name,
+    customer.last_name,
+    Artist.Name AS Artist_Name,
+    ROUND(SUM(Invoice_Line.Unit_Price * Invoice_Line.Quantity),
+            2) AS Total_Spent
+FROM
+    Customer
+        JOIN
+    Invoice ON Customer.Customer_Id = Invoice.Customer_Id
+        JOIN
+    Invoice_Line ON Invoice.Invoice_Id = Invoice_Line.Invoice_Id
+        JOIN
+    Track ON Invoice_Line.Track_Id = Track.Track_Id
+        JOIN
+    Album ON Track.Album_Id = Album.Album_Id
+        JOIN
+    Artist ON Album.Artist_Id = Artist.Artist_Id
+GROUP BY Customer.first_name , Customer.last_name , Artist_Name
+ORDER BY Total_Spent DESC;
+
+
+
+--2. We want to find out the most popular music Genre for each country. We determine the most popular genre as the genre with the highest amount of purchases. Write a query that returns each country along with the top Genre. For countries where the maximum number of purchases is shared return all Genres 
+
+
+ 
+   With Genre_Purchase_Count As (
+    Select
+        Customer.Country,
+        Genre.Name As Genre,
+        Count(*) As Total_Purchases
+    From Customer
+    Join Invoice On Customer.Customer_Id = Invoice.Customer_Id
+    Join Invoice_Line On Invoice.Invoice_Id = Invoice_Line.Invoice_Id
+    Join Track On Invoice_Line.Track_Id = Track.Track_Id
+    Join Genre On Track.Genre_Id = Genre.Genre_Id
+    Group By Customer.Country, Genre.Name
+),
+Max_Purchases_Per_Country As (
+    Select 
+        Country,
+        Max(Total_Purchases) As Max_Purchases
+    From Genre_Purchase_Count
+    Group By Country
+)
+Select 
+    gpc.country,
+    gpc.genre,
+    gpc.total_purchases
+From Genre_Purchase_Count gpc
+Join Max_Purchases_Per_Country mpc
+  On gpc.country = mpc.country And gpc.total_purchases = mpc.max_purchases
+Order By gpc.country Asc, gpc.genre Asc;
+
+
+--3. Write a query that determines the customer that has spent the most on music for each country. Write a query that returns the country along with the top customer and how much they spent. For countries where the top amount spent is shared, provide all customers who spent this amount 
+
+
+With Customer_Total_Spent As (
+    Select 
+        Customer.Country,
+        Customer.Customer_Id,
+        Customer.First_name, Customer.last_name,
+        Round(Sum(Invoice.Total), 2) As Total_Spent
+    From Customer
+    Join Invoice On Customer.Customer_Id = Invoice.Customer_Id
+    Group By Customer.Country, Customer.Customer_Id, Customer.first_name, Customer.last_name
+),
+Max_Spent_Per_Country As (
+Select 
+        Country,
+        Max(Total_Spent) As Max_Spent
+    From Customer_Total_Spent
+    Group By Country
+)
+Select 
+    cts.country,
+    cts.first_name, cts.last_name,
+    cts.total_spent
+From Customer_Total_Spent cts
+Join Max_Spent_Per_Country mspc
+  On cts.country = mspc.country And cts.total_spent = mspc.max_spent
+Order By cts.country Asc,  cts.first_name, cts.last_name Asc;
