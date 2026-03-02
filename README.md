@@ -1,5 +1,8 @@
 
 ![image](https://github.com/user-attachments/assets/eb9323c4-443f-4ab6-b2ed-11bf59979ace)
+
+<img width="2000" height="1125" alt="image" src="https://github.com/user-attachments/assets/a5180d32-539d-4dfc-b4ef-63b5cfb719ec" />
+
 Introduction
 
 This project focuses on analyzing a Music Store database using SQL to generate meaningful business insights. The dataset includes customers, invoices, tracks, artists, genres, and purchase history. By querying and joining multiple tables, the project explores customer behavior, revenue trends, and music preferences. The analysis demonstrates how SQL can transform transactional data into actionable insights for strategic decision-making.
